@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+    #proceedings-container {
+        height: 70vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+        position: relative;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 1rem;
+        background-color: #f8f9fa;
+    }
+    
+    .card {
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 4px solid #007bff;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .waiting-screen {
+        text-align: center;
+        padding: 5rem 2rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .proceeding-card {
+        animation: fade-in 1s ease;
+    }
+    
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Fade effect for top and bottom of container */
+    #proceedings-container::before,
+    #proceedings-container::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 50px;
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    #proceedings-container::before {
+        top: 0;
+        background: linear-gradient(to bottom, rgba(248, 249, 250, 1) 0%, rgba(248, 249, 250, 0) 100%);
+    }
+    
+    #proceedings-container::after {
+        bottom: 0;
+        background: linear-gradient(to top, rgba(248, 249, 250, 1) 0%, rgba(248, 249, 250, 0) 100%);
+    }
+    
+    /* Current reading item highlight */
+    .current-reading {
+        border-left-color: #28a745;
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mb-4">Conference Proceedings</h1>
+        
+        <div id="waiting-screen" class="waiting-screen {% if state.is_launched %}d-none{% endif %}">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h3>Waiting for the conference to begin...</h3>
+            <p>The chief guest will launch the proceedings shortly.</p>
+        </div>
+        
+        <div id="proceedings-section" class="{% if not state.is_launched %}d-none{% endif %}">
+            <div id="proceedings-container">
+                {% if proceedings %}
+                    {% for proc in proceedings %}
+                        <div class="card shadow-sm proceeding-card" data-id="{{ proc._id }}">
+                            <div class="card-body">
+                                <h4 class="card-title">{{ proc.title }}</h4>
+                                <h6 class="card-subtitle mb-2 text-muted">By {{ proc.author }}</h6>
+                                <p class="card-text">{{ proc.content }}</p>
+                                <small class="text-muted">{{ proc.timestamp.strftime('%Y-%m-%d %H:%M:%S') if proc.timestamp else 'No date' }}</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">No proceedings have been added yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables for auto-scrolling
+    let scrollInterval = null;
+    let isScrolling = true;
+    let lastScrollTop = 0;
+    const SCROLL_SPEED = 0.5; // pixels per frame
+    
+    // Auto-scroll function with requestAnimationFrame for smoother scrolling
+    function startAutoScroll() {
+        // Clear any existing interval
+        if (scrollInterval) {
+            clearInterval(scrollInterval);
+            scrollInterval = null;
+        }
+        
+        isScrolling = true;
+        
+        function scroll() {
+            if (!isScrolling) return;
+            
+            const container = document.getElementById('proceedings-container');
+            
+            // Check if we're at the bottom
+            if (container.scrollHeight - container.scrollTop - container.clientHeight <= 10) {
+                // We've reached the bottom, pause and then restart from top
+                isScrolling = false;
+                setTimeout(function() {
+                    container.scrollTop = 0;
+                    isScrolling = true;
+                    requestAnimationFrame(scroll);
+                }, 3000);
+                return;
+            }
+            
+            // Increment scroll position
+            container.scrollTop += SCROLL_SPEED;
+            
+            // Highlight the current card being read
+            highlightCurrentCard();
+            
+            // Continue scrolling
+            requestAnimationFrame(scroll);
+        }
+        
+        // Start the scroll animation
+        requestAnimationFrame(scroll);
+    }
+    
+    // Highlight the card currently in view
+    function highlightCurrentCard() {
+        const container = document.getElementById('proceedings-container');
+        const cards = container.querySelectorAll('.card');
+        const containerMiddle = container.scrollTop + (container.clientHeight / 2);
+        
+        // Remove current-reading class from all cards
+        cards.forEach(card => card.classList.remove('current-reading'));
+        
+        // Find the card in the middle of the viewport
+        cards.forEach(card => {
+            const cardTop = card.offsetTop;
+            const cardHeight = card.offsetHeight;
+            
+            if (cardTop < containerMiddle && (cardTop + cardHeight) > containerMiddle) {
+                card.classList.add('current-reading');
+            }
+        });
+    }
+    
+    // Check conference state
+    function checkConferenceState() {
+        $.getJSON('/api/state', function(data) {
+            if (data.is_launched) {
+                // Conference is launched, show proceedings
+                $('#waiting-screen').addClass('d-none');
+                $('#proceedings-section').removeClass('d-none');
+                fetchProceedings();
+            } else {
+                // Conference not launched yet, check again in 5 seconds
+                $('#waiting-screen').removeClass('d-none');
+                $('#proceedings-section').addClass('d-none');
+                setTimeout(checkConferenceState, 5000);
+            }
+        }).fail(function() {
+            // In case of error, retry after 10 seconds
+            setTimeout(checkConferenceState, 10000);
+        });
+    }
+
+    // Fetch proceedings
+    function fetchProceedings() {
+        $.getJSON('/api/proceedings', function(data) {
+            if (data.length > 0) {
+                // Store current scroll position and id of first visible card
+                const container = document.getElementById('proceedings-container');
+                const scrollTop = container.scrollTop;
+                let firstVisibleCardId = null;
+                
+                // Try to find first visible card
+                if (container.querySelector('.card')) {
+                    const containerTop = container.scrollTop;
+                    const cards = container.querySelectorAll('.card');
+                    
+                    for (let i = 0; i < cards.length; i++) {
+                        const cardTop = cards[i].offsetTop;
+                        if (cardTop >= containerTop) {
+                            firstVisibleCardId = cards[i].getAttribute('data-id');
+                            break;
+                        }
+                    }
+                }
+                
+                // Clear current proceedings
+                const wasEmpty = container.querySelectorAll('.card').length === 0;
+                container.innerHTML = '';
+                
+                // Add all proceedings
+                data.forEach(function(proc) {
+                    const timestamp = new Date(proc.timestamp.$date || proc.timestamp).toLocaleString();
+                    const card = document.createElement('div');
+                    card.className = 'card shadow-sm proceeding-card';
+                    card.setAttribute('data-id', proc._id);
+                    
+                    card.innerHTML = `
+                        <div class="card-body">
+                            <h4 class="card-title">${proc.title}</h4>
+                            <h6 class="card-subtitle mb-2 text-muted">By ${proc.author}</h6>
+                            <p class="card-text">${proc.content}</p>
+                            <small class="text-muted">${timestamp}</small>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                });
+                
+                // If the container was previously empty, start from the top and start scrolling
+                if (wasEmpty) {
+                    container.scrollTop = 0;
+                    // Start auto-scroll after initial load with a slight delay to let the DOM render
+                    setTimeout(function() {
+                        startAutoScroll();
+                    }, 500);
+                } else if (firstVisibleCardId) {
+                    // Try to restore the scroll position
+                    const newCard = container.querySelector(`.card[data-id="${firstVisibleCardId}"]`);
+                    if (newCard) {
+                        container.scrollTop = newCard.offsetTop;
+                    } else {
+                        container.scrollTop = scrollTop;
+                    }
+                } else {
+                    container.scrollTop = scrollTop;
+                }
+                
+                // Highlight current card
+                highlightCurrentCard();
+            } else {
+                document.getElementById('proceedings-container').innerHTML = 
+                    '<div class="alert alert-info">No proceedings have been added yet.</div>';
+            }
+            
+            // Check if conference state changes, but don't reload proceedings too often
+            setTimeout(function() {
+                $.getJSON('/api/state', function(stateData) {
+                    if (!stateData.is_launched) {
+                        // If conference was unlaunched, go back to waiting screen
+                        isScrolling = false;
+                        checkConferenceState();
+                    } else {
+                        // Only check for state changes every 30 seconds
+                        setTimeout(function() {
+                            $.getJSON('/api/state', function(latestState) {
+                                if (!latestState.is_launched) {
+                                    // Only if state has changed to unlaunched
+                                    isScrolling = false;
+                                    checkConferenceState();
+                                }
+                            });
+                        }, 30000);
+                    }
+                });
+            }, 5000);
+        }).fail(function() {
+            // In case of error, retry after 10 seconds
+            setTimeout(fetchProceedings, 10000);
+        });
+    }
+
+    $(document).ready(function() {
+        // Check initial state
+        {% if state.is_launched %}
+            fetchProceedings();
+        {% else %}
+            checkConferenceState();
+        {% endif %}
+        
+        // Handle manual scrolling - pause auto-scroll when user scrolls
+        $('#proceedings-container').on('scroll', function() {
+            const container = this;
+            
+            // Detect if this is a manual scroll or programmatic
+            if (isScrolling && Math.abs(container.scrollTop - lastScrollTop) > 5) {
+                // Looks like manual scrolling, pause the auto-scroll
+                isScrolling = false;
+                
+                // Resume auto-scrolling after 10 seconds of inactivity
+                setTimeout(function() {
+                    isScrolling = true;
+                    startAutoScroll();
+                }, 10000);
+            }
+            
+            lastScrollTop = container.scrollTop;
+        });
+    });
+</script>
+{% endblock %}

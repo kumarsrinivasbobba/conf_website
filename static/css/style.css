@@ -1,0 +1,42 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.proceeding-card {
+    border-left: 4px solid #007bff;
+}
+
+.waiting-screen {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+footer {
+    margin-top: 2rem;
+}
+
+/* Animation for new proceedings */
+@keyframes highlight {
+    0% { background-color: #fff9c4; }
+    100% { background-color: transparent; }
+}
+
+.new-proceeding {
+    animation: highlight 2s ease-in-out;
+}

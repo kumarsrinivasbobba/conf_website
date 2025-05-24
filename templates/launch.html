@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<style>
+    body {
+        background-color: #0a0e17;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow: hidden;
+    }
+
+    .navbar, footer {
+        background-color: rgba(13, 18, 30, 0.8) !important;
+        backdrop-filter: blur(10px);
+    }
+
+    .launch-container {
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .launch-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        text-align: center;
+        background: linear-gradient(45deg, #00b4ff, #7e42ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+    }
+
+    .launch-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 3rem;
+        text-align: center;
+        color: #a2b2c7;
+        max-width: 700px;
+    }
+
+    .launch-button-container {
+        position: relative;
+    }
+
+    .launch-button {
+        font-size: 1.5rem;
+        padding: 1rem 3rem;
+        border-radius: 50px;
+        background: linear-gradient(45deg, #007bff, #7e42ff);
+        border: none;
+        color: white;
+        font-weight: bold;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 30px rgba(0, 123, 255, 0.5);
+        z-index: 1;
+    }
+
+    .launch-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 50px rgba(0, 123, 255, 0.8);
+    }
+
+    .launch-button:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: 0.5s;
+    }
+
+    .launch-button:hover:before {
+        left: 100%;
+    }
+
+    .pulse {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 50px;
+        background: rgba(0, 123, 255, 0.3);
+        opacity: 0;
+        z-index: -1;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.7;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
+    }
+
+    /* Animated background */
+    .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(0, 123, 255, 0.2);
+        animation: float 15s infinite;
+    }
+
+    @keyframes float {
+        0% {
+            transform: translateY(0) translateX(0);
+        }
+        25% {
+            transform: translateY(-20px) translateX(10px);
+        }
+        50% {
+            transform: translateY(0) translateX(20px);
+        }
+        75% {
+            transform: translateY(20px) translateX(10px);
+        }
+        100% {
+            transform: translateY(0) translateX(0);
+        }
+    }
+
+    .launch-status {
+        margin-top: 2rem;
+        text-align: center;
+        color: #7e42ff;
+        font-size: 1.2rem;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    /* Launch countdown styling */
+    #launch-countdown {
+        font-size: 10rem;
+        font-weight: 700;
+        margin: 2rem 0;
+        text-align: center;
+        color: #00b4ff;
+        display: none;
+        text-shadow: 0 0 30px rgba(0, 180, 255, 0.5);
+        animation: pulsate 1s infinite alternate;
+    }
+
+    @keyframes pulsate {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    /* Success message styling */
+    #success-message {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 2rem 0;
+        text-align: center;
+        background: linear-gradient(45deg, #00ff9d, #00b4ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="background" id="particle-background"></div>
+
+<div class="launch-container">
+    <h1 class="launch-title">Conference Proceedings Launch Portal</h1>
+    <p class="launch-subtitle">As the honored chief guest, you have the privilege of officially launching the conference proceedings for all attendees.</p>
+
+    <div class="launch-button-container" id="button-container">
+        <div class="pulse"></div>
+        <form id="launch-form" action="/launch" method="post">
+            <button type="button" id="initiate-launch" class="launch-button">INITIATE LAUNCH</button>
+        </form>
+    </div>
+    
+    <!-- Launch countdown will appear here -->
+    <div id="launch-countdown"></div>
+    
+    <!-- Success message -->
+    <div id="success-message">Launch Successful!</div>
+    
+    <div class="launch-status" id="launch-status">Proceedings launch sequence initiated...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Create animated background particles
+        const background = document.getElementById('particle-background');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random size between 50px and 200px
+            const size = Math.random() * 150 + 50;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            
+            // Random position
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.left = `${Math.random() * 100}%`;
+            
+            // Random delay
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            
+            // Random opacity
+            particle.style.opacity = `${Math.random() * 0.3}`;
+            
+            background.appendChild(particle);
+        }
+
+        // Launch button animation and countdown
+        $('#initiate-launch').click(function() {
+            const button = $(this);
+            const statusElement = $('#launch-status');
+            const buttonContainer = $('#button-container');
+            const countdownElement = $('#launch-countdown');
+            
+            // Show status message
+            statusElement.css('opacity', '1');
+            
+            // Disable button and add loading effect
+            button.prop('disabled', true);
+            button.text('LAUNCHING...');
+            
+            // Add additional pulse animation
+            $('.pulse').css('animation', 'pulse 1s infinite');
+            
+            // Hide button container and show countdown
+            setTimeout(function() {
+                buttonContainer.hide();
+                countdownElement.show();
+                
+                // Start the 3-2-1 countdown
+                countdownElement.text('3');
+                
+                setTimeout(function() {
+                    countdownElement.text('2');
+                    
+                    setTimeout(function() {
+                        countdownElement.text('1');
+                        
+                        setTimeout(function() {
+                            countdownElement.hide();
+                            $('#success-message').show();
+                            statusElement.text('Redirecting to proceedings...');
+                            
+                            // Submit the form to update the database
+                            $.post('/launch', function() {
+                                // After successful launch, redirect to home page
+                                setTimeout(function() {
+                                    window.location.href = '/';
+                                }, 1500);
+                            });
+                        }, 1000);
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        });
+    });
+</script>
+{% endblock %}
