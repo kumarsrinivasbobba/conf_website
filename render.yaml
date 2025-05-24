@@ -9,4 +9,6 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.9.0
+      - key: PATH
+        value: /opt/render/project/python-3.9.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     healthCheckPath: /api/state
