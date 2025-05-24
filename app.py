@@ -137,4 +137,6 @@ def launch_page():
     return render_template('launch.html', state=state)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use PORT environment variable for compatibility with Render
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
