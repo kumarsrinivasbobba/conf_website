@@ -1,12 +1,25 @@
 {% extends 'base.html' %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <style>
+    :root {
+        --primary: #4361ee;
+        --secondary: #7209b7;
+        --accent: #f72585;
+        --success: #4cc9f0;
+        --dark: #0a0e17;
+        --light: #f8f9fa;
+        --text-light: #a2b2c7;
+    }
+    
     body {
-        background-color: #0a0e17;
+        background-color: var(--dark);
         color: #fff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        overflow: hidden;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
     }
 
     .navbar, footer {
@@ -15,59 +28,64 @@
     }
 
     .launch-container {
-        height: 80vh;
+        min-height: 90vh;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         position: relative;
-        z-index: 1;
+        z-index: 2;
+        padding: 2rem 1rem;
     }
 
     .launch-title {
-        font-size: 3.5rem;
+        font-size: clamp(2.5rem, 6vw, 3.5rem);
         font-weight: 700;
         margin-bottom: 2rem;
         text-align: center;
-        background: linear-gradient(45deg, #00b4ff, #7e42ff);
+        background: linear-gradient(45deg, var(--success), var(--accent));
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        text-shadow: 0 0 20px rgba(0, 180, 255, 0.3);
+        text-shadow: 0 0 20px rgba(76, 201, 240, 0.3);
+        line-height: 1.2;
     }
 
     .launch-subtitle {
-        font-size: 1.5rem;
+        font-size: clamp(1.1rem, 3vw, 1.5rem);
         margin-bottom: 3rem;
         text-align: center;
-        color: #a2b2c7;
+        color: var(--text-light);
         max-width: 700px;
+        line-height: 1.6;
     }
 
     .launch-button-container {
         position: relative;
+        margin-bottom: 2rem;
     }
 
     .launch-button {
-        font-size: 1.5rem;
-        padding: 1rem 3rem;
+        font-size: clamp(1.2rem, 3vw, 1.5rem);
+        padding: clamp(0.8rem, 2vw, 1rem) clamp(2rem, 5vw, 3rem);
         border-radius: 50px;
-        background: linear-gradient(45deg, #007bff, #7e42ff);
+        background: linear-gradient(45deg, var(--primary), var(--secondary));
         border: none;
         color: white;
-        font-weight: bold;
+        font-weight: 700;
         letter-spacing: 2px;
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 0 30px rgba(0, 123, 255, 0.5);
+        box-shadow: 0 0 30px rgba(67, 97, 238, 0.5);
         z-index: 1;
+        text-transform: uppercase;
     }
 
     .launch-button:hover {
         transform: scale(1.05);
-        box-shadow: 0 0 50px rgba(0, 123, 255, 0.8);
+        box-shadow: 0 0 50px rgba(67, 97, 238, 0.8);
     }
 
     .launch-button:before {
@@ -85,6 +103,23 @@
         left: 100%;
     }
 
+    .inner-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50px;
+        background: transparent;
+        box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .launch-button:hover .inner-glow {
+        opacity: 1;
+    }
+
     .pulse {
         position: absolute;
         top: 50%;
@@ -93,7 +128,7 @@
         width: 100%;
         height: 100%;
         border-radius: 50px;
-        background: rgba(0, 123, 255, 0.3);
+        background: rgba(67, 97, 238, 0.3);
         opacity: 0;
         z-index: -1;
         animation: pulse 2s infinite;
@@ -110,59 +145,90 @@
         }
     }
 
-    /* Animated background */
+    /* Enhanced background with 3D perspective */
     .background {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: -1;
+        z-index: 0;
+        perspective: 1000px;
+        overflow: hidden;
+    }
+
+    .stars-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        animation: rotate 100s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotateY(0deg); }
+        to { transform: rotateY(360deg); }
+    }
+
+    .star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background-color: white;
+        border-radius: 50%;
+        opacity: 0.7;
+        animation: twinkle 5s infinite alternate;
+    }
+
+    @keyframes twinkle {
+        0% { opacity: 0.2; }
+        100% { opacity: 1; }
     }
 
     .particle {
         position: absolute;
         border-radius: 50%;
-        background: rgba(0, 123, 255, 0.2);
+        background: radial-gradient(circle at center, rgba(67, 97, 238, 0.5) 0%, rgba(67, 97, 238, 0) 70%);
+        filter: blur(3px);
         animation: float 15s infinite;
     }
 
     @keyframes float {
         0% {
-            transform: translateY(0) translateX(0);
+            transform: translateY(0) translateX(0) scale(1);
         }
         25% {
-            transform: translateY(-20px) translateX(10px);
+            transform: translateY(-20px) translateX(10px) scale(1.05);
         }
         50% {
-            transform: translateY(0) translateX(20px);
+            transform: translateY(0) translateX(20px) scale(1);
         }
         75% {
-            transform: translateY(20px) translateX(10px);
+            transform: translateY(20px) translateX(10px) scale(0.95);
         }
         100% {
-            transform: translateY(0) translateX(0);
+            transform: translateY(0) translateX(0) scale(1);
         }
     }
 
     .launch-status {
         margin-top: 2rem;
         text-align: center;
-        color: #7e42ff;
-        font-size: 1.2rem;
+        color: var(--text-light);
+        font-size: clamp(1rem, 2vw, 1.2rem);
         opacity: 0;
         transition: opacity 0.5s ease;
     }
 
     /* Launch countdown styling */
     #launch-countdown {
-        font-size: 10rem;
+        font-size: clamp(5rem, 15vw, 10rem);
         font-weight: 700;
         margin: 2rem 0;
         text-align: center;
-        color: #00b4ff;
+        color: var(--success);
         display: none;
-        text-shadow: 0 0 30px rgba(0, 180, 255, 0.5);
+        text-shadow: 0 0 30px rgba(76, 201, 240, 0.5);
         animation: pulsate 1s infinite alternate;
     }
 
@@ -173,54 +239,182 @@
 
     /* Success message styling */
     #success-message {
-        font-size: 2.5rem;
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
         font-weight: 700;
         margin: 2rem 0;
         text-align: center;
-        background: linear-gradient(45deg, #00ff9d, #00b4ff);
+        background: linear-gradient(45deg, var(--success), var(--accent));
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
         display: none;
     }
+
+    /* Starburst effect */
+    .starburst-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+        display: none;
+    }
+
+    .starburst {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 0 60px 30px white;
+        opacity: 0;
+    }
+
+    @keyframes starburst {
+        0% {
+            transform: translate(-50%, -50%) scale(0.1);
+            opacity: 0;
+        }
+        10% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+        }
+        20% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(4);
+            opacity: 0;
+        }
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+    }
+    
+    /* Loading animation */
+    .loader {
+        width: 48px;
+        height: 48px;
+        border: 5px solid var(--text-light);
+        border-bottom-color: var(--primary);
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation 1s linear infinite;
+        margin-right: 10px;
+        display: none;
+    }
+    
+    @keyframes rotation {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .launch-container {
+            padding: 1rem;
+        }
+    }
+    
+    @media (max-height: 600px) {
+        .launch-container {
+            padding-top: 60px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="background" id="particle-background"></div>
+<div class="background" id="particle-background">
+    <div class="stars-container" id="stars-container"></div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="starburst-container" id="starburst-container">
+    <div class="starburst" id="starburst"></div>
+</div>
 
 <div class="launch-container">
-    <h1 class="launch-title">Conference Proceedings Launch Portal</h1>
-    <p class="launch-subtitle">As the honored chief guest, you have the privilege of officially launching the conference proceedings for all attendees.</p>
+    <h1 class="launch-title animate__animated animate__fadeInDown">Conference Proceedings Launch Portal</h1>
+    <p class="launch-subtitle animate__animated animate__fadeIn animate__delay-1s">As the honored chief guest, you have the privilege of officially launching the conference proceedings for all attendees.</p>
 
-    <div class="launch-button-container" id="button-container">
+    <div class="launch-button-container animate__animated animate__zoomIn animate__delay-2s" id="button-container">
         <div class="pulse"></div>
         <form id="launch-form" action="/launch" method="post">
-            <button type="button" id="initiate-launch" class="launch-button">INITIATE LAUNCH</button>
+            <button type="button" id="initiate-launch" class="launch-button">
+                Initiate Launch
+                <div class="inner-glow"></div>
+            </button>
         </form>
     </div>
     
     <!-- Launch countdown will appear here -->
-    <div id="launch-countdown"></div>
+    <div id="launch-countdown" class="animate__animated animate__fadeIn"></div>
     
     <!-- Success message -->
-    <div id="success-message">Launch Successful!</div>
+    <div id="success-message" class="animate__animated animate__bounceIn">Launch Successful!</div>
     
-    <div class="launch-status" id="launch-status">Proceedings launch sequence initiated...</div>
+    <div class="launch-status" id="launch-status">
+        <span class="loader" id="status-loader"></span>
+        <span id="status-text">Proceedings launch sequence initiated...</span>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Create starry background
+        const starsContainer = document.getElementById('stars-container');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            
+            // Random position in 3D space
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+            const z = Math.random() * 500 - 250;
+            
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.transform = `translateZ(${z}px)`;
+            
+            // Random size
+            const size = Math.random() * 2 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            
+            // Random twinkle animation delay
+            star.style.animationDelay = `${Math.random() * 5}s`;
+            
+            starsContainer.appendChild(star);
+        }
+        
         // Create animated background particles
         const background = document.getElementById('particle-background');
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 15; i++) {
             const particle = document.createElement('div');
             particle.classList.add('particle');
             
-            // Random size between 50px and 200px
-            const size = Math.random() * 150 + 50;
+            // Random size between 80px and 250px
+            const size = Math.random() * 170 + 80;
             particle.style.width = `${size}px`;
             particle.style.height = `${size}px`;
             
@@ -232,58 +426,151 @@
             particle.style.animationDelay = `${Math.random() * 5}s`;
             
             // Random opacity
-            particle.style.opacity = `${Math.random() * 0.3}`;
+            particle.style.opacity = `${Math.random() * 0.3 + 0.1}`;
             
             background.appendChild(particle);
+        }
+
+        // Set up confetti
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const myConfetti = confetti.create(confettiCanvas, {
+            resize: true
+        });
+        
+        // Function to show starburst effect
+        function showStarburst() {
+            const starburstContainer = document.getElementById('starburst-container');
+            const starburst = document.getElementById('starburst');
+            
+            starburstContainer.style.display = 'block';
+            starburst.style.animation = 'starburst 2s ease-out forwards';
+            
+            // Show confetti
+            myConfetti({
+                particleCount: 200,
+                spread: 160,
+                origin: { y: 0.6 }
+            });
+            
+            // Fire confetti continuously
+            let end = Date.now() + 3000;
+            
+            // Fire different colors continuously
+            let interval = setInterval(function() {
+                if (Date.now() > end) {
+                    return clearInterval(interval);
+                }
+                
+                confetti({
+                    particleCount: 50,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#4361ee', '#f72585', '#4cc9f0']
+                });
+                confetti({
+                    particleCount: 50,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#7209b7', '#4cc9f0', '#f72585']
+                });
+            }, 200);
         }
 
         // Launch button animation and countdown
         $('#initiate-launch').click(function() {
             const button = $(this);
             const statusElement = $('#launch-status');
+            const statusLoader = $('#status-loader');
+            const statusText = $('#status-text');
             const buttonContainer = $('#button-container');
             const countdownElement = $('#launch-countdown');
             
-            // Show status message
+            // Show status message and loader
             statusElement.css('opacity', '1');
+            statusLoader.css('display', 'inline-block');
             
             // Disable button and add loading effect
             button.prop('disabled', true);
-            button.text('LAUNCHING...');
+            button.html('Launching<span class="dots">...</span>');
+            
+            // Animate the dots
+            let dots = 0;
+            const dotsInterval = setInterval(function() {
+                const dotsElement = button.find('.dots');
+                dots = (dots + 1) % 4;
+                const newDots = '.'.repeat(dots);
+                dotsElement.text(newDots);
+            }, 300);
             
             // Add additional pulse animation
             $('.pulse').css('animation', 'pulse 1s infinite');
             
-            // Hide button container and show countdown
+            // Hide button container and show countdown with animation
             setTimeout(function() {
-                buttonContainer.hide();
-                countdownElement.show();
-                
-                // Start the 3-2-1 countdown
-                countdownElement.text('3');
+                clearInterval(dotsInterval);
+                buttonContainer.removeClass('animate__zoomIn').addClass('animate__zoomOut');
                 
                 setTimeout(function() {
-                    countdownElement.text('2');
+                    buttonContainer.hide();
+                    countdownElement.show();
+                    
+                    // Start the 3-2-1 countdown
+                    countdownElement.text('3');
+                    countdownElement.addClass('animate__animated animate__zoomIn');
                     
                     setTimeout(function() {
-                        countdownElement.text('1');
+                        countdownElement.removeClass('animate__zoomIn').addClass('animate__zoomOut');
                         
                         setTimeout(function() {
-                            countdownElement.hide();
-                            $('#success-message').show();
-                            statusElement.text('Redirecting to proceedings...');
+                            countdownElement.removeClass('animate__zoomOut').addClass('animate__zoomIn');
+                            countdownElement.text('2');
                             
-                            // Submit the form to update the database
-                            $.post('/launch', function() {
-                                // After successful launch, redirect to home page
+                            setTimeout(function() {
+                                countdownElement.removeClass('animate__zoomIn').addClass('animate__zoomOut');
+                                
                                 setTimeout(function() {
-                                    window.location.href = '/';
-                                }, 1500);
-                            });
-                        }, 1000);
+                                    countdownElement.removeClass('animate__zoomOut').addClass('animate__zoomIn');
+                                    countdownElement.text('1');
+                                    
+                                    setTimeout(function() {
+                                        countdownElement.removeClass('animate__zoomIn').addClass('animate__zoomOut');
+                                        
+                                        setTimeout(function() {
+                                            countdownElement.hide();
+                                            
+                                            // Show starburst effect
+                                            showStarburst();
+                                            
+
+                                            setTimeout(function() {
+                                                $('#success-message').show();
+                                                statusLoader.hide();
+                                                statusText.text('Redirecting to proceedings...');
+                                                
+                                                // Submit the form to update the database
+                                                $.post('/launch', function() {
+                                                    // After successful launch, redirect to home page
+                                                    setTimeout(function() {
+                                                        window.location.href = '/';
+                                                    }, 3000);
+                                                });
+                                            }, 500);
+                                        }, 300);
+                                    }, 1000);
+                                }, 300);
+                            }, 1000);
+                        }, 300);
                     }, 1000);
-                }, 1000);
-            }, 1000);
+                }, 500);
+            }, 2000);
+        });
+        
+        // Make sure confetti works on window resize
+        $(window).resize(function() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
         });
     });
 </script>
